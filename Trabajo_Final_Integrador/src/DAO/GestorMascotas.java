@@ -1,97 +1,129 @@
 package DAO;
 
 import config.DatabaseConnection;
+import models.Mascotas;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
 
-public class GestorMascotas {
+public class GestorMascotas implements GenericDao<Mascotas> {
 
-    // 📌 Agregar una nueva mascota
-    // Nota: fechaNacimiento ahora espera java.sql.Date o una cadena que pueda ser convertida
-    public void agregarMascota(String nombre, String especie, String raza, String fechaNacimientoStr, String duenio) {
+
+    // MÉTODOS TRANSACCIONALES (Aceptan Connection conn)
+
+    @Override
+    public Long crear(Connection conn, Mascotas mascota) throws SQLException {
         String sql = "INSERT INTO Mascotas (nombre, especie, raza, fechaNacimiento, duenio) VALUES (?, ?, ?, ?, ?)";
+        Long generatedId = null;
 
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Conversión de String a java.sql.Date
-            java.sql.Date sqlDate = java.sql.Date.valueOf(fechaNacimientoStr);
+            LocalDate localDate = mascota.getFechaNacimiento();
+            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
 
-            stmt.setString(1, nombre);
-            stmt.setString(2, especie);
-            stmt.setString(3, raza);
-            stmt.setDate(4, sqlDate); // Usamos setDate para el tipo DATE
-            stmt.setString(5, duenio);
+            stmt.setString(1, mascota.getNombre());
+            stmt.setString(2, mascota.getEspecie());
+            stmt.setString(3, mascota.getRaza());
+            stmt.setDate(4, sqlDate);
+            stmt.setString(5, mascota.getDuenio());
 
-            int filasAfectadas = stmt.executeUpdate();
+            if (stmt.executeUpdate() == 0) {
+                throw new SQLException("Fallo al crear la Mascota.");
+            }
 
-            if (filasAfectadas > 0) {
-                // ... (Obtención de ID y mensaje de éxito)
-                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        System.out.println("✅ Mascota agregada con ID: " + generatedKeys.getInt(1));
-                    }
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    generatedId = rs.getLong(1);
                 }
-            } else {
-                System.out.println("❌ No se pudo agregar la mascota.");
             }
-        } catch (SQLException e) {
-            System.err.println("❌ Error SQL al agregar la mascota: " + e.getMessage());
+            return generatedId;
+
         } catch (IllegalArgumentException e) {
-            System.err.println("❌ Error: Formato de fecha de nacimiento inválido (Debe ser YYYY-MM-DD).");
+            throw new SQLException("Error de formato de fecha en el campo Nacimiento: " + e.getMessage());
         }
     }
 
-    // 📌 Listar mascotas activas
-    public void listarMascotas() {
-        String sql = "SELECT id, nombre, especie, raza, duenio, fechaNacimiento FROM Mascotas WHERE eliminado = FALSE ORDER BY id";
-        List<String> mascotas = new ArrayList<>();
+    @Override
+    public void actualizar(Connection conn, Mascotas mascota) throws SQLException {
+        String sql = "UPDATE Mascotas SET nombre = ?, especie = ?, raza = ?, fechaNacimiento = ?, duenio = ? WHERE id = ? AND eliminado = FALSE";
 
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                // Uso de getBoolean para el campo eliminado (aunque no lo seleccionamos aquí, es útil saberlo)
-                mascotas.add(String.format("ID: %d | Nombre: %s | Especie: %s | Raza: %s | Dueño: %s | Nac: %s",
-                        rs.getInt("id"),
-                        rs.getString("nombre"),
-                        rs.getString("especie"),
-                        rs.getString("raza"),
-                        rs.getString("duenio"),
-                        rs.getDate("fechaNacimiento").toString())); // Usamos getDate
+            LocalDate localDate = mascota.getFechaNacimiento();
+            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
+
+            stmt.setString(1, mascota.getNombre());
+            stmt.setString(2, mascota.getEspecie());
+            stmt.setString(3, mascota.getRaza());
+            stmt.setDate(4, sqlDate);
+            stmt.setString(5, mascota.getDuenio());
+            stmt.setLong(6, mascota.getId());
+
+            if (stmt.executeUpdate() == 0) {
+                throw new SQLException("No se encontró la Mascota ID " + mascota.getId() + " para actualizar o estaba eliminada.");
             }
-        } catch (SQLException e) {
-            System.err.println("❌ Error SQL al listar las mascotas: " + e.getMessage());
-        }
-
-        if (mascotas.isEmpty()) {
-            System.out.println("📭 No hay mascotas activas registradas.");
-        } else {
-            System.out.println("\n📋 LISTA DE MASCOTAS ACTIVAS:");
-            mascotas.forEach(System.out::println);
+        } catch (IllegalArgumentException e) {
+            throw new SQLException("Error de formato de fecha al actualizar: " + e.getMessage());
         }
     }
 
-    // 📌 Eliminar una mascota (Borrado Lógico)
-    public void eliminarMascota(String id) {
-        // Borrado Lógico: Establece 'eliminado' a TRUE (o 1)
+    @Override
+    public void eliminar(Connection conn, long id) throws SQLException {
         String sql = "UPDATE Mascotas SET eliminado = TRUE WHERE id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, Integer.parseInt(id));
-            int filasAfectadas = stmt.executeUpdate();
-
-            if (filasAfectadas > 0) {
-                System.out.println("✅ Mascota " + id + " eliminada (lógicamente) con éxito.");
-            } else {
-                System.out.println("❌ No se encontró la mascota con ID: " + id);
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            if (stmt.executeUpdate() == 0) {
+                throw new SQLException("No se encontró la Mascota ID " + id + " para eliminar.");
             }
-        } catch (SQLException e) {
-            System.err.println("❌ Error SQL al eliminar la mascota: " + e.getMessage());
-        } catch (NumberFormatException e) {
-            System.err.println("❌ ID inválido. Debe ser un número: " + e.getMessage());
         }
     }
-    // ... (Faltan mostrarMascota y actualizarMascota, que siguen la misma lógica de setXxx/getXxx)
-  
+
+
+    // MÉTODOS NO TRANSACCIONALES (Lectura)
+
+    @Override
+    public Mascotas leer(long id) throws SQLException {
+        String sql = "SELECT * FROM Mascotas WHERE id = ? AND eliminado = FALSE";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return crearObjetoMascota(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<Mascotas> leerTodos() throws SQLException {
+        String sql = "SELECT * FROM Mascotas WHERE eliminado = FALSE ORDER BY id";
+        List<Mascotas> mascotas = new ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                mascotas.add(crearObjetoMascota(rs));
+            }
+        }
+        return mascotas;
+    }
+
+    // Método helper para mapear ResultSet al objeto (constructor de persistencia)
+    private Mascotas crearObjetoMascota(ResultSet rs) throws SQLException {
+        Date sqlDate = rs.getDate("fechaNacimiento");
+        LocalDate localDate = sqlDate != null ? sqlDate.toLocalDate() : null;
+
+        return new Mascotas(
+                rs.getLong("id"),
+                rs.getBoolean("eliminado"),
+                rs.getString("nombre"),
+                rs.getString("especie"),
+                rs.getString("raza"),
+                localDate,
+                rs.getString("duenio")
+        );
+    }
 }

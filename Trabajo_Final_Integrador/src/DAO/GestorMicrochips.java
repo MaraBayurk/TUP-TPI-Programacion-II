@@ -1,64 +1,147 @@
 package DAO;
 
 import config.DatabaseConnection;
+import models.Microchips;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.time.LocalDate;
 
-public class GestorMicrochips {
+public class GestorMicrochips implements GenericDao<Microchips> {
 
-    // 📌 Agregar un nuevo microchip
-    // Los tipos DATE y BIGINT (mascota_id) se manejan específicamente
-    public void agregarMicrochip(String codigo, String fechaImplantacionStr, String veterinaria, String observaciones, int mascotaId) {
+    // ===============================================
+    // MÉTODOS TRANSACCIONALES (Aceptan Connection conn)
+    // ===============================================
+    @Override
+    public Long crear(Connection conn, Microchips microchip) throws SQLException {
         String sql = "INSERT INTO Microchips (codigo, fechaImplantacion, veterinaria, observaciones, mascota_id) VALUES (?, ?, ?, ?, ?)";
+        Long generatedId = null;
 
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Conversión de String a java.sql.Date
-            java.sql.Date sqlDate = java.sql.Date.valueOf(fechaImplantacionStr);
+            LocalDate localDate = microchip.getFechaImplantacion();
+            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
 
-            stmt.setString(1, codigo);
+            stmt.setString(1, microchip.getCodigo());
             stmt.setDate(2, sqlDate);
-            stmt.setString(3, veterinaria);
-            stmt.setString(4, observaciones);
-            stmt.setInt(5, mascotaId); // Usamos setInt/setLong para el BIGINT (mascota_id)
+            stmt.setString(3, microchip.getVeterinaria());
+            stmt.setString(4, microchip.getObservaciones());
+            stmt.setLong(5, microchip.getMascotaId()); // Clave Foránea
 
-            int filasAfectadas = stmt.executeUpdate();
-
-            if (filasAfectadas > 0) {
-                System.out.println("✅ Microchip " + codigo + " agregado a la Mascota ID: " + mascotaId);
-            } else {
-                System.out.println("❌ No se pudo agregar el microchip.");
+            if (stmt.executeUpdate() == 0) {
+                throw new SQLException("Fallo al crear el Microchip.");
             }
-        } catch (SQLException e) {
-            // Este catch atrapará errores como 'mascota_id' no existente o 'codigo' duplicado (UNIQUE)
-            System.err.println("❌ Error SQL al agregar el microchip: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.err.println("❌ Error: Formato de fecha de implantación inválido (Debe ser YYYY-MM-DD).");
-        }
-    }
 
-    // 📌 Obtener Microchip por ID de Mascota (mascota_id es UNIQUE)
-    public void mostrarMicrochipPorMascota(int mascotaId) {
-        String sql = "SELECT * FROM Microchips WHERE mascota_id = ?";
-
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, mascotaId);
-
-            try (ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) {
-                    System.out.println("\n🔎 Microchip Encontrado:");
-                    System.out.println("Código: " + rs.getString("codigo"));
-                    System.out.println("Veterinaria: " + rs.getString("veterinaria"));
-                    System.out.println("Observaciones: " + rs.getString("observaciones"));
-                    System.out.println("Fecha Implantación: " + rs.getDate("fechaImplantacion").toString());
-                } else {
-                    System.out.println("❌ No se encontró microchip para la Mascota ID: " + mascotaId);
+                    generatedId = rs.getLong(1);
                 }
             }
-        } catch (SQLException e) {
-            System.err.println("❌ Error SQL al buscar el microchip: " + e.getMessage());
+            return generatedId;
+
+        } catch (IllegalArgumentException e) {
+            throw new SQLException("Error de formato de fecha en el campo Microchip: " + e.getMessage());
         }
     }
 
-    // ... (Faltan listarMicrochips, actualizarMicrochip y eliminarMicrochip)
+    @Override
+    public void actualizar(Connection conn, Microchips microchip) throws SQLException {
+        String sql = "UPDATE Microchips SET codigo = ?, fechaImplantacion = ?, veterinaria = ?, observaciones = ?, mascota_id = ? WHERE id = ? AND eliminado = FALSE";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            LocalDate localDate = microchip.getFechaImplantacion();
+            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
+
+            stmt.setString(1, microchip.getCodigo());
+            stmt.setDate(2, sqlDate);
+            stmt.setString(3, microchip.getVeterinaria());
+            stmt.setString(4, microchip.getObservaciones());
+            stmt.setLong(5, microchip.getMascotaId());
+            stmt.setLong(6, microchip.getId());
+
+            if (stmt.executeUpdate() == 0) {
+                throw new SQLException("No se encontró el Microchip ID " + microchip.getId() + " para actualizar o estaba eliminado.");
+            }
+        } catch (IllegalArgumentException e) {
+            throw new SQLException("Error de formato de fecha al actualizar Microchip: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void eliminar(Connection conn, long id) throws SQLException {
+        String sql = "UPDATE Microchips SET eliminado = TRUE WHERE id = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+            if (stmt.executeUpdate() == 0) {
+                throw new SQLException("No se encontró el Microchip ID " + id + " para eliminar.");
+            }
+        }
+    }
+
+    // ===============================================
+    // MÉTODOS NO TRANSACCIONALES (Lectura)
+    // ===============================================
+    @Override
+    public Microchips leer(long id) throws SQLException {
+        String sql = "SELECT * FROM Microchips WHERE id = ? AND eliminado = FALSE";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return crearObjetoMicrochip(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<Microchips> leerTodos() throws SQLException {
+        String sql = "SELECT * FROM Microchips WHERE eliminado = FALSE ORDER BY id";
+        List<Microchips> microchips = new ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                microchips.add(crearObjetoMicrochip(rs));
+            }
+        }
+        return microchips;
+    }
+
+    // Método helper para mapear ResultSet al objeto (constructor de persistencia)
+    private Microchips crearObjetoMicrochip(ResultSet rs) throws SQLException {
+        Date sqlDate = rs.getDate("fechaImplantacion");
+        LocalDate localDate = sqlDate != null ? sqlDate.toLocalDate() : null;
+
+        return new Microchips(
+                rs.getLong("id"),
+                rs.getBoolean("eliminado"),
+                rs.getString("codigo"),
+                localDate,
+                rs.getString("veterinaria"),
+                rs.getString("observaciones"),
+                rs.getLong("mascota_id")
+        );
+    }
+
+    // Método auxiliar para ser llamado desde el Service (Hydration)
+    public Microchips leerPorMascotaId(long mascotaId) throws SQLException {
+        String sql = "SELECT * FROM Microchips WHERE mascota_id = ? AND eliminado = FALSE";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, mascotaId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return crearObjetoMicrochip(rs);
+                }
+            }
+        }
+        return null;
+    }
 }
