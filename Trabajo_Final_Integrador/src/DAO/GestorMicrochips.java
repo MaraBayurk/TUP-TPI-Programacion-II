@@ -2,6 +2,8 @@ package DAO;
 
 import config.DatabaseConnection;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GestorMicrochips {
 
@@ -60,5 +62,86 @@ public class GestorMicrochips {
         }
     }
 
-    // ... (Faltan listarMicrochips, actualizarMicrochip y eliminarMicrochip)
+   // Listar todos los microchips
+    public void listarMicrochips() {
+        String sql = "SELECT id, codigo, fechaImplantacion, veterinaria, observaciones, mascota_id FROM Microchips ORDER BY id";
+        List<String> microchips = new ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             PreparedStatement stmt = conn.prepareStatement(sql); 
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                microchips.add(String.format(
+                        "ID: %d | Código: %s | Fecha: %s | Veterinaria: %s | Mascota ID: %d | Obs: %s",
+                        rs.getInt("id"),
+                        rs.getString("codigo"),
+                        rs.getDate("fechaImplantacion").toString(),
+                        rs.getString("veterinaria"),
+                        rs.getInt("mascota_id"),
+                        rs.getString("observaciones") != null ? rs.getString("observaciones") : "(sin observaciones)"
+                ));
+            }
+
+        } catch (SQLException e) {
+            System.err.println(" Error SQL al listar los microchips: " + e.getMessage());
+        }
+
+        if (microchips.isEmpty()) {
+            System.out.println("No hay microchips registrados.");
+        } else {
+            System.out.println("\n LISTA DE MICROCHIPS REGISTRADOS:");
+            microchips.forEach(System.out::println);
+        }
+    }
+
+    // Actualizar un microchip
+    public void actualizarMicrochip(int id, String codigo, String fechaImplantacionStr, String veterinaria, String observaciones, int mascotaId) {
+        String sql = "UPDATE Microchips SET codigo = ?, fechaImplantacion = ?, veterinaria = ?, observaciones = ?, mascota_id = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            java.sql.Date sqlDate = java.sql.Date.valueOf(fechaImplantacionStr);
+
+            stmt.setString(1, codigo);
+            stmt.setDate(2, sqlDate);
+            stmt.setString(3, veterinaria);
+            stmt.setString(4, observaciones);
+            stmt.setInt(5, mascotaId);
+            stmt.setInt(6, id);
+
+            int filasAfectadas = stmt.executeUpdate();
+
+            if (filasAfectadas > 0) {
+                System.out.println("Microchip actualizado correctamente (ID: " + id + ").");
+            } else {
+                System.out.println("No se encontró un microchip con ese ID.");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error SQL al actualizar el microchip: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: Formato de fecha inválido (Debe ser YYYY-MM-DD).");
+        }
+    }
+
+    //  Eliminar un microchip
+    public void eliminarMicrochip(int id) {
+        String sql = "DELETE FROM Microchips WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            int filasAfectadas = stmt.executeUpdate();
+
+            if (filasAfectadas > 0) {
+                System.out.println("Microchip eliminado correctamente (ID: " + id + ").");
+            } else {
+                System.out.println("No se encontró un microchip con ese ID.");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error SQL al eliminar el microchip: " + e.getMessage());
+        }
+    }
 }
