@@ -92,6 +92,64 @@ public class GestorMascotas {
             System.err.println("❌ ID inválido. Debe ser un número: " + e.getMessage());
         }
     }
-    // ... (Faltan mostrarMascota y actualizarMascota, que siguen la misma lógica de setXxx/getXxx)
-  
+    
+     // Mostrar una mascota por ID
+    public void mostrarMascota(String id) {
+        String sql = "SELECT id, nombre, especie, raza, duenio, fechaNacimiento, eliminado FROM Mascotas WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, Integer.parseInt(id));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    System.out.println("\n🐾 DETALLES DE LA MASCOTA:");
+                    System.out.println("ID: " + rs.getInt("id"));
+                    System.out.println("Nombre: " + rs.getString("nombre"));
+                    System.out.println("Especie: " + rs.getString("especie"));
+                    System.out.println("Raza: " + rs.getString("raza"));
+                    System.out.println("Dueño: " + rs.getString("duenio"));
+                    System.out.println("Fecha de nacimiento: " + rs.getDate("fechaNacimiento"));
+                    System.out.println("Eliminado: " + (rs.getBoolean("eliminado") ? "Sí" : "No"));
+                } else {
+                    System.out.println("No se encontró una mascota con ID: " + id);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error SQL al mostrar la mascota: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.err.println("ID inválido. Debe ser un número: " + e.getMessage());
+        }
+    }
+
+    // Actualizar los datos de una mascota
+    public void actualizarMascota(int id, String nombre, String especie, String raza, String fechaNacimientoStr, String duenio) {
+        String sql = "UPDATE Mascotas SET nombre = ?, especie = ?, raza = ?, fechaNacimiento = ?, duenio = ? WHERE id = ? AND eliminado = FALSE";
+
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            java.sql.Date sqlDate = java.sql.Date.valueOf(fechaNacimientoStr);
+
+            stmt.setString(1, nombre);
+            stmt.setString(2, especie);
+            stmt.setString(3, raza);
+            stmt.setDate(4, sqlDate);
+            stmt.setString(5, duenio);
+            stmt.setInt(6, id);
+
+            int filasAfectadas = stmt.executeUpdate();
+
+            if (filasAfectadas > 0) {
+                System.out.println("Mascota actualizada correctamente (ID: " + id + ").");
+            } else {
+                System.out.println("No se encontró una mascota activa con ese ID o no hubo cambios.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error SQL al actualizar la mascota: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: Formato de fecha inválido (Debe ser YYYY-MM-DD).");
+        }
+    }
 }
