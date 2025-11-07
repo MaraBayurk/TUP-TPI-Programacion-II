@@ -9,11 +9,12 @@ import java.time.LocalDate;
 
 public class GestorMascotas implements GenericDao<Mascotas> {
 
-
+    // ===============================================
     // MÉTODOS TRANSACCIONALES (Aceptan Connection conn)
-
+    // ===============================================
     @Override
     public Long crear(Connection conn, Mascotas mascota) throws SQLException {
+        // En el crear, asumimos que 'conn' NUNCA es null porque solo debe ser llamado desde un Service con transacción.
         String sql = "INSERT INTO Mascotas (nombre, especie, raza, fechaNacimiento, duenio) VALUES (?, ?, ?, ?, ?)";
         Long generatedId = null;
 
@@ -48,6 +49,12 @@ public class GestorMascotas implements GenericDao<Mascotas> {
     public void actualizar(Connection conn, Mascotas mascota) throws SQLException {
         String sql = "UPDATE Mascotas SET nombre = ?, especie = ?, raza = ?, fechaNacimiento = ?, duenio = ? WHERE id = ? AND eliminado = FALSE";
 
+        // 💡 LÓGICA DE CONEXIÓN CORREGIDA: Si 'conn' es null, abre una nueva y la cierra.
+        boolean closeConn = (conn == null);
+        if (closeConn) {
+            conn = DatabaseConnection.getConnection();
+        }
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             LocalDate localDate = mascota.getFechaNacimiento();
@@ -65,24 +72,40 @@ public class GestorMascotas implements GenericDao<Mascotas> {
             }
         } catch (IllegalArgumentException e) {
             throw new SQLException("Error de formato de fecha al actualizar: " + e.getMessage());
+        } finally {
+            if (closeConn) {
+                conn.close();
+            }
         }
     }
 
     @Override
     public void eliminar(Connection conn, long id) throws SQLException {
+        // 💡 LÓGICA DE CONEXIÓN CORREGIDA: Si 'conn' es null, abre una nueva y la cierra.
+        boolean closeConn = (conn == null);
+        if (closeConn) {
+            conn = DatabaseConnection.getConnection();
+        }
+
         String sql = "UPDATE Mascotas SET eliminado = TRUE WHERE id = ?";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, id);
+
             if (stmt.executeUpdate() == 0) {
                 throw new SQLException("No se encontró la Mascota ID " + id + " para eliminar.");
+            }
+        } finally {
+            if (closeConn) {
+                conn.close();
             }
         }
     }
 
-
+    // ===============================================
     // MÉTODOS NO TRANSACCIONALES (Lectura)
-
+    // ===============================================
+    // NOTA: Los métodos de lectura ya manejan su propia conexión internamente.
     @Override
     public Mascotas leer(long id) throws SQLException {
         String sql = "SELECT * FROM Mascotas WHERE id = ? AND eliminado = FALSE";
