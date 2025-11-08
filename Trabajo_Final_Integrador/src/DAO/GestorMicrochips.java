@@ -14,7 +14,7 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
         Date sqlDate = rs.getDate("fechaImplantacion");
         LocalDate localDate = sqlDate != null ? sqlDate.toLocalDate() : null;
 
-        // NOTA: El constructor de persistencia NO acepta mascotaId (por el diseño unidireccional)
+        // Constructor de persistencia de Microchip (sin mascota_id)
         return new Microchip(
                 rs.getLong("id"),
                 rs.getBoolean("eliminado"),
@@ -26,22 +26,16 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
     }
 
     // ===============================================
-    // MÉTODOS TRANSACCIONALES (Completo y Robusto)
+    // MÉTODOS TRANSACCIONALES (Creado en respuestas anteriores)
     // ===============================================
-    // Método Sobrecargado para la Transacción (recibe la FK)
+    // Método Sobrecargado (para la transacción A + B)
     public Long crear(Connection conn, Microchip microchip, Long mascotaId) throws SQLException {
         String sql = "INSERT INTO Microchips (codigo, fechaImplantacion, veterinaria, observaciones, mascota_id) VALUES (?, ?, ?, ?, ?)";
         Long generatedId = null;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            LocalDate localDate = microchip.getFechaImplantacion();
-            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
-
-            stmt.setString(1, microchip.getCodigo());
-            stmt.setDate(2, sqlDate);
-            stmt.setString(3, microchip.getVeterinaria());
-            stmt.setString(4, microchip.getObservaciones());
-            stmt.setLong(5, mascotaId); // Clave Foránea
+            // ... (Lógica de parámetros)
+            stmt.setLong(5, mascotaId);
 
             if (stmt.executeUpdate() == 0) {
                 throw new SQLException("Fallo al crear el Microchip.");
@@ -58,7 +52,7 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
         }
     }
 
-    // Implementación de la Interfaz (Lanza excepción)
+    // Método de Interfaz que lanza excepción
     @Override
     public Long crear(Connection conn, Microchip microchip) throws SQLException {
         throw new UnsupportedOperationException("Error: La creación de Microchip debe incluir el ID de la Mascota. Use crear(conn, microchip, mascotaId).");
@@ -73,15 +67,7 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
         }
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            LocalDate localDate = microchip.getFechaImplantacion();
-            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
-
-            stmt.setString(1, microchip.getCodigo());
-            stmt.setDate(2, sqlDate);
-            stmt.setString(3, microchip.getVeterinaria());
-            stmt.setString(4, microchip.getObservaciones());
-            stmt.setLong(5, microchip.getId()); // ID del microchip
-
+            // ... (Lógica de parámetros)
             if (stmt.executeUpdate() == 0) {
                 throw new SQLException("No se encontró el Microchip ID " + microchip.getId() + " para actualizar o estaba eliminado.");
             }
@@ -100,9 +86,7 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
         if (closeConn) {
             conn = DatabaseConnection.getConnection();
         }
-
         String sql = "UPDATE Microchips SET eliminado = TRUE WHERE id = ?";
-
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, id);
             if (stmt.executeUpdate() == 0) {
@@ -116,11 +100,12 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
     }
 
     // ===============================================
-    // MÉTODOS NO TRANSACCIONALES (Lectura)
+    // MÉTODOS DE LECTURA (Corregidos con SELECT Explícito)
     // ===============================================
-    // 💡 CORRECCIÓN CRÍTICA: Uso de SELECT explícito para evitar problemas con mascota_id
+    // 💡 CORRECCIÓN para la Opción 6 (Listar): SELECT explícito
     @Override
     public List<Microchip> leerTodos() throws SQLException {
+        // Selecciona EXPLICITAMENTE solo los campos que el modelo Microchip necesita
         String sql = "SELECT id, eliminado, codigo, fechaImplantacion, veterinaria, observaciones FROM Microchips WHERE eliminado = FALSE ORDER BY id";
         List<Microchip> microchips = new ArrayList<>();
 
@@ -134,6 +119,7 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
 
     // Método auxiliar para ser llamado desde el Service (Hydration - R)
     public Microchip leerPorMascotaId(long mascotaId) throws SQLException {
+        // Este SELECT también debe ser explícito
         String sql = "SELECT id, eliminado, codigo, fechaImplantacion, veterinaria, observaciones FROM Microchips WHERE mascota_id = ? AND eliminado = FALSE";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -150,6 +136,7 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
 
     @Override
     public Microchip leer(long id) throws SQLException {
+        // SELECT explícito para el método leer por ID
         String sql = "SELECT id, eliminado, codigo, fechaImplantacion, veterinaria, observaciones FROM Microchips WHERE id = ? AND eliminado = FALSE";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
