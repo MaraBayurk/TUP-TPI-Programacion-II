@@ -1,19 +1,19 @@
 package DAO;
 
 import config.DatabaseConnection;
-import models.Mascotas;
+import models.Mascota;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
 
-public class GestorMascotas implements GenericDao<Mascotas> {
+public class GestorMascotas implements GenericDao<Mascota> {
 
     // ===============================================
     // MÉTODOS TRANSACCIONALES (Aceptan Connection conn)
     // ===============================================
     @Override
-    public Long crear(Connection conn, Mascotas mascota) throws SQLException {
+    public Long crear(Connection conn, Mascota mascota) throws SQLException {
         // En el crear, asumimos que 'conn' NUNCA es null porque solo debe ser llamado desde un Service con transacción.
         String sql = "INSERT INTO Mascotas (nombre, especie, raza, fechaNacimiento, duenio) VALUES (?, ?, ?, ?, ?)";
         Long generatedId = null;
@@ -46,7 +46,7 @@ public class GestorMascotas implements GenericDao<Mascotas> {
     }
 
     @Override
-    public void actualizar(Connection conn, Mascotas mascota) throws SQLException {
+    public void actualizar(Connection conn, Mascota mascota) throws SQLException {
         String sql = "UPDATE Mascotas SET nombre = ?, especie = ?, raza = ?, fechaNacimiento = ?, duenio = ? WHERE id = ? AND eliminado = FALSE";
 
         // 💡 LÓGICA DE CONEXIÓN CORREGIDA: Si 'conn' es null, abre una nueva y la cierra.
@@ -107,7 +107,7 @@ public class GestorMascotas implements GenericDao<Mascotas> {
     // ===============================================
     // NOTA: Los métodos de lectura ya manejan su propia conexión internamente.
     @Override
-    public Mascotas leer(long id) throws SQLException {
+    public Mascota leer(long id) throws SQLException {
         String sql = "SELECT * FROM Mascotas WHERE id = ? AND eliminado = FALSE";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -122,9 +122,9 @@ public class GestorMascotas implements GenericDao<Mascotas> {
     }
 
     @Override
-    public List<Mascotas> leerTodos() throws SQLException {
+    public List<Mascota> leerTodos() throws SQLException {
         String sql = "SELECT * FROM Mascotas WHERE eliminado = FALSE ORDER BY id";
-        List<Mascotas> mascotas = new ArrayList<>();
+        List<Mascota> mascotas = new ArrayList<>();
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
@@ -135,11 +135,11 @@ public class GestorMascotas implements GenericDao<Mascotas> {
     }
 
     // Método helper para mapear ResultSet al objeto (constructor de persistencia)
-    private Mascotas crearObjetoMascota(ResultSet rs) throws SQLException {
+    private Mascota crearObjetoMascota(ResultSet rs) throws SQLException {
         Date sqlDate = rs.getDate("fechaNacimiento");
         LocalDate localDate = sqlDate != null ? sqlDate.toLocalDate() : null;
 
-        return new Mascotas(
+        return new Mascota(
                 rs.getLong("id"),
                 rs.getBoolean("eliminado"),
                 rs.getString("nombre"),

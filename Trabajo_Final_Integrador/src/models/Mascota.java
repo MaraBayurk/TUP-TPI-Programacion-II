@@ -2,7 +2,7 @@ package models;
 
 import java.time.LocalDate;
 
-public class Mascotas extends Base {
+public class Mascota extends Base {
 
     // Atributos Propios (Mapean a columnas en la tabla Mascotas)
     private String nombre;
@@ -13,18 +13,18 @@ public class Mascotas extends Base {
 
     // 💡 REFERENCIA UNIDIRECCIONAL 1:1
     // La Mascota (A) conoce a su Microchip (B)
-    private Microchips microchip;
+    private Microchip microchip;
 
     // ===========================================
     // CONSTRUCTORES
     // ===========================================
     // 1. Constructor Vacío
-    public Mascotas() {
+    public Mascota() {
         super(); // Llama al constructor de Base() para inicializar 'eliminado = false'
     }
 
     // 2. Constructor de Creación (Desde la Capa Service/UI, sin ID)
-    public Mascotas(String nombre, String especie, String raza, LocalDate fechaNacimiento, String duenio, Microchips microchip) {
+    public Mascota(String nombre, String especie, String raza, LocalDate fechaNacimiento, String duenio, Microchip microchip) {
         this.nombre = nombre;
         this.especie = especie;
         this.raza = raza;
@@ -34,7 +34,7 @@ public class Mascotas extends Base {
     }
 
     // 3. Constructor de Persistencia (Usado por el DAO al leer de la DB)
-    public Mascotas(Long id, Boolean eliminado, String nombre, String especie, String raza, LocalDate fechaNacimiento, String duenio) {
+    public Mascota(Long id, Boolean eliminado, String nombre, String especie, String raza, LocalDate fechaNacimiento, String duenio) {
         super(id, eliminado); // Llama al constructor base para ID y eliminado
         this.nombre = nombre;
         this.especie = especie;
@@ -87,11 +87,11 @@ public class Mascotas extends Base {
         this.duenio = duenio;
     }
 
-    public Microchips getMicrochip() {
+    public Microchip getMicrochip() {
         return microchip;
     }
 
-    public void setMicrochip(Microchips microchip) {
+    public void setMicrochip(Microchip microchip) {
         this.microchip = microchip;
     }
 

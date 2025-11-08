@@ -2,7 +2,7 @@ package models;
 
 import java.time.LocalDate;
 
-public class Microchips extends Base {
+public class Microchip extends Base {
 
     // Atributos Propios (Mapean a columnas en la tabla Microchips)
     private String codigo;
@@ -14,16 +14,15 @@ public class Microchips extends Base {
     // Este campo es crucial para que el DAO asocie el Microchip a la Mascota.
     private Long mascotaId;
 
-    // ===========================================
-    // CONSTRUCTORES
-    // ===========================================
-    // 1. Constructor Vacío
-    public Microchips() {
+
+    // Constructores
+
+    public Microchip() {
         super();
     }
 
     // 2. Constructor de Creación
-    public Microchips(String codigo, LocalDate fechaImplantacion, String veterinaria, String observaciones, Long mascotaId) {
+    public Microchip(String codigo, LocalDate fechaImplantacion, String veterinaria, String observaciones, Long mascotaId) {
         this.codigo = codigo;
         this.fechaImplantacion = fechaImplantacion;
         this.veterinaria = veterinaria;
@@ -32,7 +31,7 @@ public class Microchips extends Base {
     }
 
     // 3. Constructor de Persistencia (Usado por el DAO al leer de la DB)
-    public Microchips(Long id, Boolean eliminado, String codigo, LocalDate fechaImplantacion, String veterinaria, String observaciones, Long mascotaId) {
+    public Microchip(Long id, Boolean eliminado, String codigo, LocalDate fechaImplantacion, String veterinaria, String observaciones, Long mascotaId) {
         super(id, eliminado);
         this.codigo = codigo;
         this.fechaImplantacion = fechaImplantacion;

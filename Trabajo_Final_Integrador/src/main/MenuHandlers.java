@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Scanner;
 
-import models.Mascotas;
-import models.Microchips;
+import models.Mascota;
+import models.Microchip;
 import service.MascotasServiceImpl;
 import service.MicrochipsServiceImpl;
 
@@ -98,10 +98,10 @@ public class MenuHandlers {
         String veterinaria = MenuDisplay.getStringInput(scanner, "Veterinaria: ");
         String observaciones = MenuDisplay.getStringInput(scanner, "Observaciones: ");
 
-        Microchips microchip = new Microchips(codigo, fechaImplantacion, veterinaria, observaciones, null);
-        Mascotas mascota = new Mascotas(nombre, especie, raza, fechaNacimiento, duenio, microchip);
+        Microchip microchip = new Microchip(codigo, fechaImplantacion, veterinaria, observaciones, null);
+        Mascota mascota = new Mascota(nombre, especie, raza, fechaNacimiento, duenio, microchip);
 
-        Mascotas mascotaCreada = mascotaService.insertar(mascota);
+        Mascota mascotaCreada = mascotaService.insertar(mascota);
         System.out.println("\n✅ ÉXITO: Mascota y Microchip creados en una sola transacción.");
         System.out.println("   Mascota ID Generado: " + mascotaCreada.getId());
     }
@@ -113,7 +113,7 @@ public class MenuHandlers {
             return;
         }
 
-        Mascotas mascota = mascotaService.getById(id);
+        Mascota mascota = mascotaService.getById(id);
 
         if (mascota != null) {
             System.out.println("\n🐾 DETALLES DE LA MASCOTA:");
@@ -127,7 +127,7 @@ public class MenuHandlers {
     // al usar MenuDisplay.getLongInput(scanner, ...) o MenuDisplay.getStringInput(scanner, ...).
     private void listMascotas() {
         System.out.println("\n--- LISTADO DE MASCOTAS ACTIVAS ---");
-        List<Mascotas> mascotas = mascotaService.getAll();
+        List<Mascota> mascotas = mascotaService.getAll();
         if (mascotas.isEmpty()) {
             System.out.println("📭 No hay mascotas registradas.");
             return;
@@ -142,7 +142,7 @@ public class MenuHandlers {
             return;
         }
 
-        Mascotas mascotaExistente = mascotaService.getById(id);
+        Mascota mascotaExistente = mascotaService.getById(id);
         if (mascotaExistente == null) {
             System.out.println("❌ Mascota con ID " + id + " no encontrada.");
             return;
@@ -158,7 +158,7 @@ public class MenuHandlers {
         }
 
         // Lógica de actualización del microchip (si existe)
-        Microchips microchip = mascotaExistente.getMicrochip();
+        Microchip microchip = mascotaExistente.getMicrochip();
         if (microchip != null) {
             System.out.println("\n--- Actualizando Microchip Código: " + microchip.getCodigo() + " ---");
             // Se ajustó la llamada para usar el scanner
@@ -185,7 +185,7 @@ public class MenuHandlers {
 
     private void listMicrochips() {
         System.out.println("\n--- LISTADO DE MICROCHIPS ---");
-        List<Microchips> chips = microchipService.getAll();
+        List<Microchip> chips = microchipService.getAll();
         if (chips.isEmpty()) {
             System.out.println("📭 No hay microchips registrados.");
             return;

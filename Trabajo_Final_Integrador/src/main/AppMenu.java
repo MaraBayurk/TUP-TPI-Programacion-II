@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Scanner;
 
-import models.Mascotas;
-import models.Microchips;
+import models.Mascota;
+import models.Microchip;
 import service.MascotasServiceImpl;
 import service.MicrochipsServiceImpl;
 
@@ -115,11 +115,11 @@ public class AppMenu {
         LocalDate fechaImplantacion = LocalDate.parse(scanner.nextLine());
 
         // 3. Construir objetos
-        Microchips microchip = new Microchips(codigo, fechaImplantacion, "Veterinaria TFI", "Implante inicial", null);
-        Mascotas mascota = new Mascotas(nombre, especie, raza, fechaNacimiento, duenio, microchip);
+        Microchip microchip = new Microchip(codigo, fechaImplantacion, "Veterinaria TFI", "Implante inicial", null);
+        Mascota mascota = new Mascota(nombre, especie, raza, fechaNacimiento, duenio, microchip);
 
         // 4. Llamar al Service (aquí ocurre la transacción)
-        Mascotas mascotaCreada = mascotaService.insertar(mascota);
+        Mascota mascotaCreada = mascotaService.insertar(mascota);
         System.out.println("\n✅ ÉXITO: Mascota y Microchip creados en una sola transacción.");
         System.out.println("   Mascota ID Generado: " + mascotaCreada.getId());
         System.out.println("   Microchip Código: " + mascotaCreada.getMicrochip().getCodigo());
@@ -127,7 +127,7 @@ public class AppMenu {
 
     private void listarMascotas() {
         System.out.println("\n--- LISTADO DE MASCOTAS ACTIVAS ---");
-        List<Mascotas> mascotas = mascotaService.getAll();
+        List<Mascota> mascotas = mascotaService.getAll();
         if (mascotas.isEmpty()) {
             System.out.println("📭 No hay mascotas registradas.");
             return;
@@ -144,7 +144,7 @@ public class AppMenu {
         System.out.print("Ingrese el ID de la mascota a buscar: ");
         try {
             long id = Long.parseLong(scanner.nextLine());
-            Mascotas mascota = mascotaService.getById(id);
+            Mascota mascota = mascotaService.getById(id);
             
             if (mascota != null) {
                 System.out.println("\n🐾 DETALLES DE LA MASCOTA:");
@@ -170,7 +170,7 @@ public class AppMenu {
     
     private void listarMicrochips() {
         System.out.println("\n--- LISTADO DE MICROCHIPS ---");
-        List<Microchips> chips = microchipService.getAll();
+        List<Microchip> chips = microchipService.getAll();
         if (chips.isEmpty()) {
             System.out.println("📭 No hay microchips registrados.");
             return;

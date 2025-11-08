@@ -3,14 +3,14 @@ package service;
 import DAO.GestorMascotas;
 import DAO.GestorMicrochips;
 import config.DatabaseConnection;
-import models.Mascotas;
-import models.Microchips;
+import models.Mascota;
+import models.Microchip;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-public class MascotasServiceImpl implements GenericService<Mascotas> {
+public class MascotasServiceImpl implements GenericService<Mascota> {
 
     // Instancias de DAOs (Gestores)
     private final GestorMascotas mascotaDAO = new GestorMascotas();
@@ -18,7 +18,7 @@ public class MascotasServiceImpl implements GenericService<Mascotas> {
 
     //  CREAR (INSERTAR) - TRANSACCIÓN OBLIGATORIA (A + B)
     @Override
-    public Mascotas insertar(Mascotas mascota) {
+    public Mascota insertar(Mascota mascota) {
 
         // 1. Validaciones (Regla de Negocio)
         validarMascota(mascota);
@@ -36,7 +36,7 @@ public class MascotasServiceImpl implements GenericService<Mascotas> {
             mascota.setId(mascotaId);
 
             // 3.2. Crear Microchip (B) usando el ID de Mascota como FK
-            Microchips microchip = mascota.getMicrochip();
+            Microchip microchip = mascota.getMicrochip();
             if (microchip != null && mascotaId != null) {
                 // Prepara el Microchip con la FK recién generada
                 microchip.setMascotaId(mascotaId);
@@ -76,7 +76,7 @@ public class MascotasServiceImpl implements GenericService<Mascotas> {
 
     //  ACTUALIZAR - Transacción Simple (Actualiza A y B si existen)
     @Override
-    public Mascotas actualizar(Mascotas mascota) {
+    public Mascota actualizar(Mascota mascota) {
         validarMascota(mascota);
         Connection conn = null;
         try {
@@ -88,7 +88,7 @@ public class MascotasServiceImpl implements GenericService<Mascotas> {
             mascotaDAO.actualizar(conn, mascota);
 
             // 2. Actualizar Microchip asociado si existe
-            Microchips microchip = mascota.getMicrochip();
+            Microchip microchip = mascota.getMicrochip();
             if (microchip != null && microchip.getId() != null) {
                 microchipDAO.actualizar(conn, microchip);
             }
@@ -127,14 +127,14 @@ public class MascotasServiceImpl implements GenericService<Mascotas> {
     }
 
     @Override
-    public Mascotas getById(Long id) {
+    public Mascota getById(Long id) {
         try {
             // 1. Leer Mascota (A)
-            Mascotas mascota = mascotaDAO.leer(id);
+            Mascota mascota = mascotaDAO.leer(id);
 
             if (mascota != null) {
                 // 2. Cargar Microchip (B) para completar la relación (Hydration)
-                Microchips microchip = microchipDAO.leerPorMascotaId(id);
+                Microchip microchip = microchipDAO.leerPorMascotaId(id);
                 mascota.setMicrochip(microchip);
             }
             return mascota;
@@ -144,7 +144,7 @@ public class MascotasServiceImpl implements GenericService<Mascotas> {
     }
 
     @Override
-    public List<Mascotas> getAll() {
+    public List<Mascota> getAll() {
         try {
             return mascotaDAO.leerTodos();
         } catch (SQLException e) {
@@ -153,7 +153,7 @@ public class MascotasServiceImpl implements GenericService<Mascotas> {
     }
 
     // 📌 Validaciones (Reglas de Negocio)
-    private void validarMascota(Mascotas mascota) {
+    private void validarMascota(Mascota mascota) {
         if (mascota.getNombre() == null || mascota.getNombre().trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre de la mascota es obligatorio.");
         }

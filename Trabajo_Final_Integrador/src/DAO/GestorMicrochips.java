@@ -1,19 +1,19 @@
 package DAO;
 
 import config.DatabaseConnection;
-import models.Microchips;
+import models.Microchip;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
 
-public class GestorMicrochips implements GenericDao<Microchips> {
+public class GestorMicrochips implements GenericDao<Microchip> {
 
     // ===============================================
     // MÉTODOS TRANSACCIONALES (Aceptan Connection conn)
     // ===============================================
     @Override
-    public Long crear(Connection conn, Microchips microchip) throws SQLException {
+    public Long crear(Connection conn, Microchip microchip) throws SQLException {
         String sql = "INSERT INTO Microchips (codigo, fechaImplantacion, veterinaria, observaciones, mascota_id) VALUES (?, ?, ?, ?, ?)";
         Long generatedId = null;
 
@@ -45,7 +45,7 @@ public class GestorMicrochips implements GenericDao<Microchips> {
     }
 
     @Override
-    public void actualizar(Connection conn, Microchips microchip) throws SQLException {
+    public void actualizar(Connection conn, Microchip microchip) throws SQLException {
         String sql = "UPDATE Microchips SET codigo = ?, fechaImplantacion = ?, veterinaria = ?, observaciones = ?, mascota_id = ? WHERE id = ? AND eliminado = FALSE";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -85,7 +85,7 @@ public class GestorMicrochips implements GenericDao<Microchips> {
     // MÉTODOS NO TRANSACCIONALES (Lectura)
     // ===============================================
     @Override
-    public Microchips leer(long id) throws SQLException {
+    public Microchip leer(long id) throws SQLException {
         String sql = "SELECT * FROM Microchips WHERE id = ? AND eliminado = FALSE";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -101,9 +101,9 @@ public class GestorMicrochips implements GenericDao<Microchips> {
     }
 
     @Override
-    public List<Microchips> leerTodos() throws SQLException {
+    public List<Microchip> leerTodos() throws SQLException {
         String sql = "SELECT * FROM Microchips WHERE eliminado = FALSE ORDER BY id";
-        List<Microchips> microchips = new ArrayList<>();
+        List<Microchip> microchips = new ArrayList<>();
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
@@ -114,11 +114,11 @@ public class GestorMicrochips implements GenericDao<Microchips> {
     }
 
     // Método helper para mapear ResultSet al objeto (constructor de persistencia)
-    private Microchips crearObjetoMicrochip(ResultSet rs) throws SQLException {
+    private Microchip crearObjetoMicrochip(ResultSet rs) throws SQLException {
         Date sqlDate = rs.getDate("fechaImplantacion");
         LocalDate localDate = sqlDate != null ? sqlDate.toLocalDate() : null;
 
-        return new Microchips(
+        return new Microchip(
                 rs.getLong("id"),
                 rs.getBoolean("eliminado"),
                 rs.getString("codigo"),
@@ -130,7 +130,7 @@ public class GestorMicrochips implements GenericDao<Microchips> {
     }
 
     // Método auxiliar para ser llamado desde el Service (Hydration)
-    public Microchips leerPorMascotaId(long mascotaId) throws SQLException {
+    public Microchip leerPorMascotaId(long mascotaId) throws SQLException {
         String sql = "SELECT * FROM Microchips WHERE mascota_id = ? AND eliminado = FALSE";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
