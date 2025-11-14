@@ -18,39 +18,31 @@ public class MenuHandlers {
     public void startApplication() {
         int opcion;
         do {
-            AppMenu.showMainMenu(); // Usando AppMenu como clase de display
+            AppMenu.showMainMenu();
             opcion = AppMenu.getMenuOption(scanner);
             handleOption(opcion);
         } while (opcion != 0);
-
         scanner.close();
     }
 
     private void handleOption(int opcion) {
         try {
             switch (opcion) {
-                case 1:
+                case 1 ->
                     createMascotaTransaccional();
-                    break;
-                case 2:
+                case 2 ->
                     listMascotas();
-                    break;
-                case 3:
+                case 3 ->
                     findMascotaById();
-                    break;
-                case 4:
+                case 4 ->
                     updateMascota();
-                    break;
-                case 5:
+                case 5 ->
                     deleteMascota();
-                    break;
-                case 6:
+                case 6 ->
                     listMicrochips();
-                    break;
-                case 0:
+                case 0 ->
                     System.out.println("\n¡Saliendo del sistema! ¡Adiós!");
-                    break;
-                default:
+                default ->
                     System.out.println("Opción no válida. Intente de nuevo.");
             }
         } catch (RuntimeException e) {
@@ -66,11 +58,11 @@ public class MenuHandlers {
         String raza = AppMenu.getStringInput(scanner, "Raza: ");
 
         String fechaNacimientoStr = AppMenu.getStringInput(scanner, "Fecha Nacimiento (AAAA-MM-DD): ");
-        LocalDate fechaNacimiento = null;
+        LocalDate fechaNacimiento;
         try {
             fechaNacimiento = LocalDate.parse(fechaNacimientoStr);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Formato de fecha de nacimiento incorrecto. Use AAAA-MM-DD.");
+            throw new IllegalArgumentException("Formato fecha nacimiento incorrecto. AAAA-MM-DD.");
         }
 
         String duenio = AppMenu.getStringInput(scanner, "Dueño: ");
@@ -78,12 +70,11 @@ public class MenuHandlers {
         System.out.println("\n--- DATOS DEL MICROCHIP (1:1) ---");
         String codigo = AppMenu.getStringInput(scanner, "Código ÚNICO del Microchip: ");
         String fechaImplantacionStr = AppMenu.getStringInput(scanner, "Fecha Implantación (AAAA-MM-DD): ");
-
-        LocalDate fechaImplantacion = null;
+        LocalDate fechaImplantacion;
         try {
             fechaImplantacion = LocalDate.parse(fechaImplantacionStr);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Formato de fecha de implantación incorrecto. Use AAAA-MM-DD.");
+            throw new IllegalArgumentException("Formato fecha implantación incorrecto. AAAA-MM-DD.");
         }
 
         String veterinaria = AppMenu.getStringInput(scanner, "Veterinaria: ");
@@ -93,6 +84,7 @@ public class MenuHandlers {
         Mascota mascota = new Mascota(nombre, especie, raza, fechaNacimiento, duenio, microchip);
 
         Mascota mascotaCreada = mascotaService.insertar(mascota);
+
         System.out.println("\n✅ ÉXITO: Mascota y Microchip creados en una sola transacción.");
         System.out.println("   Mascota ID Generado: " + mascotaCreada.getId());
     }
@@ -110,15 +102,12 @@ public class MenuHandlers {
         }
 
         System.out.println("\n--- Actualizando Mascota ID: " + id + " ---");
-
-        // 1. Actualizar campos de Mascota
         System.out.println("Valor actual del Nombre: " + mascotaExistente.getNombre());
         String nuevoNombre = AppMenu.getStringInput(scanner, "Nuevo Nombre (Dejar vacío para mantener): ");
         if (!nuevoNombre.trim().isEmpty()) {
             mascotaExistente.setNombre(nuevoNombre);
         }
 
-        // 2. Actualizar Microchip asociado (si existe)
         Microchip microchip = mascotaExistente.getMicrochip();
         if (microchip != null) {
             System.out.println("\n--- Actualizando Microchip Código: " + microchip.getCodigo() + " ---");
@@ -129,7 +118,7 @@ public class MenuHandlers {
         }
 
         mascotaService.actualizar(mascotaExistente);
-        System.out.println("✅ Mascota ID " + id + " actualizada con éxito (Transacción de actualización).");
+        System.out.println("✅ Mascota ID " + id + " actualizada con éxito.");
     }
 
     private void findMascotaById() {
@@ -139,10 +128,12 @@ public class MenuHandlers {
         }
 
         Mascota mascota = mascotaService.getById(id);
-
         if (mascota != null) {
             System.out.println("\n🐾 DETALLES DE LA MASCOTA (Hidratado con Microchip):");
             System.out.println(mascota);
+            if (mascota.getMicrochip() != null) {
+                System.out.println(mascota.getMicrochip());
+            }
         } else {
             System.out.println("❌ Mascota con ID " + id + " no encontrada o eliminada.");
         }
@@ -163,7 +154,6 @@ public class MenuHandlers {
         if (id == null) {
             return;
         }
-
         mascotaService.eliminar(id);
         System.out.println("✅ Mascota ID " + id + " marcada como eliminada (Baja Lógica).");
     }
