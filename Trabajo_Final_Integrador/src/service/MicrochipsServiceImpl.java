@@ -43,6 +43,9 @@ public class MicrochipsServiceImpl implements GenericService<Microchip> {
 
     @Override
     public List<Microchip> getAll() {
-        try { return microchipDAO.leerTodos(); } catch (SQLException e) { throw new RuntimeException(e); }
-    }
-}
+        try {
+            return microchipDAO.leerTodos();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al obtener todos los microchips", e);
+        }
+    }}
