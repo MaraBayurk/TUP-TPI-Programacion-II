@@ -26,5 +26,11 @@ public class MicrochipsServiceImpl implements GenericService<Microchip> {
     @Override public Microchip actualizar(Microchip microchip) { return null; }
     @Override public void eliminar(Long id) { /* ... */ }
     @Override public Microchip getById(Long id) { return null; }
-    @Override public List<Microchip> getAll() { return new ArrayList<>(); }
-}
+    @Override
+    public List<Microchip> getAll() {
+        try {
+            return microchipDAO.leerTodos();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al obtener todos los microchips", e);
+        }
+    }}
