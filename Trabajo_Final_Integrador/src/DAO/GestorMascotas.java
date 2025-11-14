@@ -1,26 +1,50 @@
 package DAO;
 
 import config.DatabaseConnection;
-import models.Mascotas;
+import models.Mascota;
+import models.Microchip;
+
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalDate;
 
-public class GestorMascotas implements GenericDao<Mascotas> {
+public class GestorMascotas implements GenericDAO<Mascota> {
 
+    private final GestorMicrochips microchipDAO = new GestorMicrochips();
 
-    // MÉTODOS TRANSACCIONALES (Aceptan Connection conn)
+    // ==========================================================
+    // MAPEO DE MASCOTA
+    // ==========================================================
+    private Mascota crearObjetoMascota(ResultSet rs) throws SQLException {
+        Date sqlDate = rs.getDate("fechaNacimiento");
+        LocalDate localDate = sqlDate != null ? sqlDate.toLocalDate() : null;
 
+        return new Mascota(
+                rs.getLong("id"),
+                rs.getBoolean("eliminado"),
+                rs.getString("nombre"),
+                rs.getString("especie"),
+                rs.getString("raza"),
+                localDate,
+                rs.getString("duenio")
+        );
+    }
+
+    // ==========================================================
+    // CRUD TRANSACCIONAL
+    // ==========================================================
     @Override
-    public Long crear(Connection conn, Mascotas mascota) throws SQLException {
+    public Long crear(Connection conn, Mascota mascota) throws SQLException {
+
         String sql = "INSERT INTO Mascotas (nombre, especie, raza, fechaNacimiento, duenio) VALUES (?, ?, ?, ?, ?)";
-        Long generatedId = null;
+
+        Long generatedId;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            LocalDate localDate = mascota.getFechaNacimiento();
-            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
+            LocalDate ld = mascota.getFechaNacimiento();
+            Date sqlDate = (ld != null ? Date.valueOf(ld) : null);
 
             stmt.setString(1, mascota.getNombre());
             stmt.setString(2, mascota.getEspecie());
@@ -28,30 +52,30 @@ public class GestorMascotas implements GenericDao<Mascotas> {
             stmt.setDate(4, sqlDate);
             stmt.setString(5, mascota.getDuenio());
 
-            if (stmt.executeUpdate() == 0) {
-                throw new SQLException("Fallo al crear la Mascota.");
-            }
+            stmt.executeUpdate();
 
             try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    generatedId = rs.getLong(1);
+                if (!rs.next()) {
+                    throw new SQLException("No se generó ID");
                 }
+                generatedId = rs.getLong(1);
+                mascota.setId(generatedId);
             }
-            return generatedId;
-
-        } catch (IllegalArgumentException e) {
-            throw new SQLException("Error de formato de fecha en el campo Nacimiento: " + e.getMessage());
         }
+
+        return generatedId;
     }
 
     @Override
-    public void actualizar(Connection conn, Mascotas mascota) throws SQLException {
-        String sql = "UPDATE Mascotas SET nombre = ?, especie = ?, raza = ?, fechaNacimiento = ?, duenio = ? WHERE id = ? AND eliminado = FALSE";
+    public void actualizar(Connection conn, Mascota mascota) throws SQLException {
+
+        String sql = "UPDATE Mascotas SET nombre=?, especie=?, raza=?, fechaNacimiento=?, duenio=? "
+                + "WHERE id=? AND eliminado=FALSE";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            LocalDate localDate = mascota.getFechaNacimiento();
-            java.sql.Date sqlDate = localDate != null ? java.sql.Date.valueOf(localDate) : null;
+            LocalDate ld = mascota.getFechaNacimiento();
+            Date sqlDate = (ld != null ? Date.valueOf(ld) : null);
 
             stmt.setString(1, mascota.getNombre());
             stmt.setString(2, mascota.getEspecie());
@@ -61,69 +85,67 @@ public class GestorMascotas implements GenericDao<Mascotas> {
             stmt.setLong(6, mascota.getId());
 
             if (stmt.executeUpdate() == 0) {
-                throw new SQLException("No se encontró la Mascota ID " + mascota.getId() + " para actualizar o estaba eliminada.");
+                throw new SQLException("Mascota no encontrada.");
             }
-        } catch (IllegalArgumentException e) {
-            throw new SQLException("Error de formato de fecha al actualizar: " + e.getMessage());
         }
     }
 
     @Override
     public void eliminar(Connection conn, long id) throws SQLException {
-        String sql = "UPDATE Mascotas SET eliminado = TRUE WHERE id = ?";
-
+        String sql = "UPDATE Mascotas SET eliminado=TRUE WHERE id=?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, id);
-            if (stmt.executeUpdate() == 0) {
-                throw new SQLException("No se encontró la Mascota ID " + id + " para eliminar.");
-            }
+            stmt.executeUpdate();
         }
     }
 
-
-    // MÉTODOS NO TRANSACCIONALES (Lectura)
-
+    // ==========================================================
+    // LECTURAS
+    // ==========================================================
     @Override
-    public Mascotas leer(long id) throws SQLException {
-        String sql = "SELECT * FROM Mascotas WHERE id = ? AND eliminado = FALSE";
+    public Mascota leer(long id) throws SQLException {
+        String sql = "SELECT * FROM Mascotas WHERE id=? AND eliminado=FALSE";
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setLong(1, id);
+
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return crearObjetoMascota(rs);
+                    Mascota mascota = crearObjetoMascota(rs);
+
+                    // Hidratar Microchip (1:1)
+                    Microchip microchip = microchipDAO.leerPorMascotaId(id);
+                    mascota.setMicrochip(microchip);
+
+                    return mascota;
                 }
             }
         }
+
         return null;
     }
 
     @Override
-    public List<Mascotas> leerTodos() throws SQLException {
-        String sql = "SELECT * FROM Mascotas WHERE eliminado = FALSE ORDER BY id";
-        List<Mascotas> mascotas = new ArrayList<>();
+    public List<Mascota> leerTodos() throws SQLException {
+
+        String sql = "SELECT * FROM Mascotas WHERE eliminado=FALSE";
+
+        List<Mascota> lista = new ArrayList<>();
 
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+
             while (rs.next()) {
-                mascotas.add(crearObjetoMascota(rs));
+                Mascota mascota = crearObjetoMascota(rs);
+
+                // ⭐ HIDRATAR MICROCHIP AQUÍ ⭐
+                Microchip microchip = microchipDAO.leerPorMascotaId(mascota.getId());
+                mascota.setMicrochip(microchip);
+
+                lista.add(mascota);
             }
         }
-        return mascotas;
-    }
 
-    // Método helper para mapear ResultSet al objeto (constructor de persistencia)
-    private Mascotas crearObjetoMascota(ResultSet rs) throws SQLException {
-        Date sqlDate = rs.getDate("fechaNacimiento");
-        LocalDate localDate = sqlDate != null ? sqlDate.toLocalDate() : null;
-
-        return new Mascotas(
-                rs.getLong("id"),
-                rs.getBoolean("eliminado"),
-                rs.getString("nombre"),
-                rs.getString("especie"),
-                rs.getString("raza"),
-                localDate,
-                rs.getString("duenio")
-        );
+        return lista;
     }
 }

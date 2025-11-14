@@ -1,23 +1,17 @@
 package service;
 
 import java.util.List;
+import models.Mascota; // Usamos Mascota como ejemplo
+import models.Microchip; // Usamos Microchip como ejemplo
 
 public interface GenericService<T> {
     
-    // 📌 Métodos CRUD estándar
-    
-    // Inserta una entidad. Maneja la transacción si es compuesta (A + B).
+    // Métodos Transaccionales/Operacionales
     T insertar(T entidad); 
-
-    // Actualiza una entidad. Maneja la transacción si es compuesta.
     T actualizar(T entidad);
-    
-    // Elimina (lógicamente) una entidad.
     void eliminar(Long id);
 
-    // Obtiene una entidad por su ID (sin transacción).
+    // Métodos de Lectura
     T getById(Long id);
-
-    // Obtiene todas las entidades activas (sin transacción).
     List<T> getAll();
 }
