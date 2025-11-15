@@ -17,7 +17,7 @@ public class DatabaseConnection {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             // 🔹 Se lanza una excepción en caso de que el driver no esté disponible
-            throw new RuntimeException("Error: No se encontró el driver JDBC.", e);
+            throw new RuntimeException("Error: No se encontro el driver JDBC.", e);
         }
     }
 
@@ -30,7 +30,7 @@ public class DatabaseConnection {
     public static Connection getConnection() throws SQLException {
         // Validación adicional para asegurarse de que las credenciales no estén vacías
         if (URL == null || URL.isEmpty() || USER == null || USER.isEmpty() || PASSWORD == null || PASSWORD.isEmpty()) {
-            throw new SQLException("Configuración de la base de datos incompleta o inválida.");
+            throw new SQLException("Configuracion de la base de datos incompleta o invalida.");
         }
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }

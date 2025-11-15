@@ -41,12 +41,12 @@ public class MenuHandlers {
                 case 6 ->
                     listMicrochips();
                 case 0 ->
-                    System.out.println("\n¡Saliendo del sistema! ¡Adiós!");
+                    System.out.println("\nSaliendo del sistema...Bye!");
                 default ->
-                    System.out.println("Opción no válida. Intente de nuevo.");
+                    System.out.println("Opcion no valida. Intente de nuevo.");
             }
         } catch (RuntimeException e) {
-            System.err.println("⚠️ OPERACIÓN FALLIDA: " + e.getMessage());
+            System.err.println("OPERACION FALLIDA: " + e.getMessage());
         }
     }
 
@@ -65,16 +65,16 @@ public class MenuHandlers {
             throw new IllegalArgumentException("Formato fecha nacimiento incorrecto. AAAA-MM-DD.");
         }
 
-        String duenio = AppMenu.getStringInput(scanner, "Dueño: ");
+        String duenio = AppMenu.getStringInput(scanner, "Duenio: ");
 
         System.out.println("\n--- DATOS DEL MICROCHIP (1:1) ---");
-        String codigo = AppMenu.getStringInput(scanner, "Código ÚNICO del Microchip: ");
-        String fechaImplantacionStr = AppMenu.getStringInput(scanner, "Fecha Implantación (AAAA-MM-DD): ");
+        String codigo = AppMenu.getStringInput(scanner, "Codigo UNICO del Microchip: ");
+        String fechaImplantacionStr = AppMenu.getStringInput(scanner, "Fecha Implantacion (AAAA-MM-DD): ");
         LocalDate fechaImplantacion;
         try {
             fechaImplantacion = LocalDate.parse(fechaImplantacionStr);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Formato fecha implantación incorrecto. AAAA-MM-DD.");
+            throw new IllegalArgumentException("Formato fecha implantacion incorrecto. AAAA-MM-DD.");
         }
 
         String veterinaria = AppMenu.getStringInput(scanner, "Veterinaria: ");
@@ -85,7 +85,7 @@ public class MenuHandlers {
 
         Mascota mascotaCreada = mascotaService.insertar(mascota);
 
-        System.out.println("\n✅ ÉXITO: Mascota y Microchip creados en una sola transacción.");
+        System.out.println("\n EXITO: Mascota y Microchip creados en una sola transaccion.");
         System.out.println("   Mascota ID Generado: " + mascotaCreada.getId());
     }
 
@@ -97,28 +97,28 @@ public class MenuHandlers {
 
         Mascota mascotaExistente = mascotaService.getById(id);
         if (mascotaExistente == null) {
-            System.out.println("❌ Mascota con ID " + id + " no encontrada.");
+            System.out.println("Mascota con ID " + id + " no encontrada.");
             return;
         }
 
         System.out.println("\n--- Actualizando Mascota ID: " + id + " ---");
         System.out.println("Valor actual del Nombre: " + mascotaExistente.getNombre());
-        String nuevoNombre = AppMenu.getStringInput(scanner, "Nuevo Nombre (Dejar vacío para mantener): ");
+        String nuevoNombre = AppMenu.getStringInput(scanner, "Nuevo Nombre (Dejar vacio para mantener): ");
         if (!nuevoNombre.trim().isEmpty()) {
             mascotaExistente.setNombre(nuevoNombre);
         }
 
         Microchip microchip = mascotaExistente.getMicrochip();
         if (microchip != null) {
-            System.out.println("\n--- Actualizando Microchip Código: " + microchip.getCodigo() + " ---");
-            String nuevaVeterinaria = AppMenu.getStringInput(scanner, "Nueva Veterinaria (Dejar vacío para mantener): ");
+            System.out.println("\n--- Actualizando Microchip Codigo: " + microchip.getCodigo() + " ---");
+            String nuevaVeterinaria = AppMenu.getStringInput(scanner, "Nueva Veterinaria (Dejar vacio para mantener): ");
             if (!nuevaVeterinaria.trim().isEmpty()) {
                 microchip.setVeterinaria(nuevaVeterinaria);
             }
         }
 
         mascotaService.actualizar(mascotaExistente);
-        System.out.println("✅ Mascota ID " + id + " actualizada con éxito.");
+        System.out.println("Mascota ID " + id + " actualizada con exito.");
     }
 
     private void findMascotaById() {
@@ -129,13 +129,13 @@ public class MenuHandlers {
 
         Mascota mascota = mascotaService.getById(id);
         if (mascota != null) {
-            System.out.println("\n🐾 DETALLES DE LA MASCOTA (Hidratado con Microchip):");
+            System.out.println("\nDETALLES DE LA MASCOTA:");
             System.out.println(mascota);
             if (mascota.getMicrochip() != null) {
                 System.out.println(mascota.getMicrochip());
             }
         } else {
-            System.out.println("❌ Mascota con ID " + id + " no encontrada o eliminada.");
+            System.out.println("Mascota con ID " + id + " no encontrada o eliminada.");
         }
     }
 
@@ -143,26 +143,26 @@ public class MenuHandlers {
         System.out.println("\n--- LISTADO DE MASCOTAS ACTIVAS ---");
         List<Mascota> mascotas = mascotaService.getAll();
         if (mascotas.isEmpty()) {
-            System.out.println("📭 No hay mascotas registradas.");
+            System.out.println("No hay mascotas registradas.");
             return;
         }
         mascotas.forEach(m -> System.out.println(m.toString()));
     }
 
     private void deleteMascota() {
-        Long id = AppMenu.getLongInput(scanner, "Ingrese el ID de la mascota para BAJA LÓGICA: ");
+        Long id = AppMenu.getLongInput(scanner, "Ingrese el ID de la mascota para BAJA LOGICA: ");
         if (id == null) {
             return;
         }
         mascotaService.eliminar(id);
-        System.out.println("✅ Mascota ID " + id + " marcada como eliminada (Baja Lógica).");
+        System.out.println("Mascota ID " + id + " marcada como eliminada (Baja Logica).");
     }
 
     private void listMicrochips() {
         System.out.println("\n--- LISTADO DE MICROCHIPS ---");
         List<Microchip> chips = microchipService.getAll();
         if (chips.isEmpty()) {
-            System.out.println("📭 No hay microchips registrados.");
+            System.out.println("No hay microchips registrados.");
             return;
         }
         chips.forEach(c -> System.out.println(c.toString()));
