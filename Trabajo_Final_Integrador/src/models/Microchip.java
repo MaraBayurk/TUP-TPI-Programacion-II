@@ -12,16 +12,13 @@ public class Microchip {
     private String observaciones;
     private Long mascotaId; // FK (puede ser null hasta que la mascota exista)
 
-    // ---------------------------
     // Constructor vacío (por si hace falta)
-    // ---------------------------
     public Microchip() {
         this.eliminado = false;
     }
 
-    // ---------------------------
+
     // Constructor para crear (usado por el menú antes de persistir)
-    // ---------------------------
     public Microchip(String codigo, LocalDate fechaImplantacion, String veterinaria, String observaciones) {
         this.codigo = codigo;
         this.fechaImplantacion = fechaImplantacion;
@@ -30,9 +27,8 @@ public class Microchip {
         this.eliminado = false;
     }
 
-    // ---------------------------
+
     // Constructor completo (usado por el DAO al mapear ResultSet)
-    // ---------------------------
     public Microchip(Long id, Boolean eliminado, String codigo,
             LocalDate fechaImplantacion, String veterinaria,
             String observaciones, Long mascotaId) {
@@ -45,9 +41,7 @@ public class Microchip {
         this.mascotaId = mascotaId;
     }
 
-    // ---------------------------
     // Getters y Setters
-    // ---------------------------
     public Long getId() {
         return id;
     }

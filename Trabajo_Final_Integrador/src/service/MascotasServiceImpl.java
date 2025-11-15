@@ -42,7 +42,7 @@ public class MascotasServiceImpl implements GenericService<Mascota> {
                 }
             } catch (SQLException ignored) {
             }
-            throw new RuntimeException("Error en transacción Mascota+Microchip: " + e.getMessage(), e);
+            throw new RuntimeException("Error en transaccion Mascota+Microchip: " + e.getMessage(), e);
         } finally {
             try {
                 if (conn != null) {
@@ -92,10 +92,23 @@ public class MascotasServiceImpl implements GenericService<Mascota> {
 
     @Override
     public void eliminar(Long id) {
+        Connection conn = null;
+
         try {
-            mascotaDAO.eliminar(null, id);
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false);
+            mascotaDAO.eliminar(conn, id);
+            conn.commit();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+            throw new RuntimeException("Error al eliminar mascota ID " + id, e);
+
+        } finally {
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
         }
     }
 
@@ -138,7 +151,7 @@ public class MascotasServiceImpl implements GenericService<Mascota> {
             throw new IllegalArgumentException("Fecha nacimiento obligatoria.");
         }
         if (mascota.getMicrochip() != null && (mascota.getMicrochip().getCodigo() == null || mascota.getMicrochip().getCodigo().isEmpty())) {
-            throw new IllegalArgumentException("Código microchip obligatorio.");
+            throw new IllegalArgumentException("Codigo microchip obligatorio.");
         }
     }
 }

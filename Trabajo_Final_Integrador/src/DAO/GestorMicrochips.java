@@ -18,7 +18,9 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
         LocalDate fecha = (sqlDate != null) ? sqlDate.toLocalDate() : null;
 
         Long mascotaId = rs.getLong("mascota_id");
-        if (rs.wasNull()) mascotaId = null;
+        if (rs.wasNull()) {
+            mascotaId = null;
+        }
 
         return new Microchip(
                 rs.getLong("id"),
@@ -31,17 +33,11 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
         );
     }
 
-    // ----------------------------------------------------------
-    // Interfaz: este método no se usa en tu flujo transaccional
-    // ----------------------------------------------------------
     @Override
     public Long crear(Connection conn, Microchip microchip) throws SQLException {
         throw new UnsupportedOperationException("Use crear(conn, microchip, mascotaId) para insertar microchip con FK.");
     }
 
-    // ----------------------------------------------------------
-    // CREAR transaccional (recibe mascotaId para FK)
-    // ----------------------------------------------------------
     public Long crear(Connection conn, Microchip microchip, Long mascotaId) throws SQLException {
         String sql = "INSERT INTO Microchips (codigo, fechaImplantacion, veterinaria, observaciones, mascota_id) VALUES (?, ?, ?, ?, ?)";
         Long generatedId = null;
@@ -65,7 +61,9 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
             }
 
             int affected = stmt.executeUpdate();
-            if (affected == 0) throw new SQLException("No se insertó microchip.");
+            if (affected == 0) {
+                throw new SQLException("No se insertó microchip.");
+            }
 
             try (ResultSet keys = stmt.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -79,13 +77,12 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
         return generatedId;
     }
 
-    // ----------------------------------------------------------
-    // ACTUALIZAR
-    // ----------------------------------------------------------
     @Override
     public void actualizar(Connection conn, Microchip microchip) throws SQLException {
         boolean closeConn = (conn == null);
-        if (closeConn) conn = DatabaseConnection.getConnection();
+        if (closeConn) {
+            conn = DatabaseConnection.getConnection();
+        }
 
         String sql = "UPDATE Microchips SET codigo = ?, fechaImplantacion = ?, veterinaria = ?, observaciones = ? WHERE id = ? AND (eliminado = FALSE OR eliminado IS NULL)";
 
@@ -103,19 +100,22 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
             stmt.setLong(5, microchip.getId());
 
             int updated = stmt.executeUpdate();
-            if (updated == 0) throw new SQLException("No se actualizó microchip ID " + microchip.getId());
+            if (updated == 0) {
+                throw new SQLException("No se actualizó microchip ID " + microchip.getId());
+            }
         } finally {
-            if (closeConn && conn != null) conn.close();
+            if (closeConn && conn != null) {
+                conn.close();
+            }
         }
     }
 
-    // ----------------------------------------------------------
-    // ELIMINAR (baja lógica)
-    // ----------------------------------------------------------
     @Override
     public void eliminar(Connection conn, long id) throws SQLException {
         boolean closeConn = (conn == null);
-        if (closeConn) conn = DatabaseConnection.getConnection();
+        if (closeConn) {
+            conn = DatabaseConnection.getConnection();
+        }
 
         String sql = "UPDATE Microchips SET eliminado = TRUE WHERE id = ?";
 
@@ -123,57 +123,52 @@ public class GestorMicrochips implements GenericDAO<Microchip> {
             stmt.setLong(1, id);
             stmt.executeUpdate();
         } finally {
-            if (closeConn && conn != null) conn.close();
+            if (closeConn && conn != null) {
+                conn.close();
+            }
         }
     }
 
-    // ----------------------------------------------------------
-    // LEER POR ID
-    // ----------------------------------------------------------
     @Override
     public Microchip leer(long id) throws SQLException {
         String sql = "SELECT id, eliminado, codigo, fechaImplantacion, veterinaria, observaciones, mascota_id FROM Microchips WHERE id = ? AND (eliminado = FALSE OR eliminado IS NULL)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return crearObjetoMicrochip(rs);
+                if (rs.next()) {
+                    return crearObjetoMicrochip(rs);
+                }
             }
         }
         return null;
     }
 
-    // ----------------------------------------------------------
-    // LEER TODOS
-    // ----------------------------------------------------------
     @Override
     public List<Microchip> leerTodos() throws SQLException {
         String sql = "SELECT id, eliminado, codigo, fechaImplantacion, veterinaria, observaciones, mascota_id FROM Microchips WHERE eliminado = FALSE OR eliminado IS NULL ORDER BY id";
         List<Microchip> lista = new ArrayList<>();
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
 
-            while (rs.next()) lista.add(crearObjetoMicrochip(rs));
+            while (rs.next()) {
+                lista.add(crearObjetoMicrochip(rs));
+            }
         }
         return lista;
     }
 
-    // ----------------------------------------------------------
-    // LEER POR MASCOTA_ID (hidratación)
-    // ----------------------------------------------------------
     public Microchip leerPorMascotaId(long mascotaId) throws SQLException {
         String sql = "SELECT id, eliminado, codigo, fechaImplantacion, veterinaria, observaciones, mascota_id FROM Microchips WHERE mascota_id = ? AND (eliminado = FALSE OR eliminado IS NULL)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, mascotaId);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return crearObjetoMicrochip(rs);
+                if (rs.next()) {
+                    return crearObjetoMicrochip(rs);
+                }
             }
         }
         return null;

@@ -14,7 +14,7 @@ public class MicrochipsServiceImpl implements GenericService<Microchip> {
 
     @Override
     public Microchip insertar(Microchip microchip) {
-        throw new UnsupportedOperationException("Crear microchips debe hacerse en la transacción Mascota+Microchip.");
+        throw new UnsupportedOperationException("Crear microchips debe hacerse en la transaccion Mascota+Microchip.");
     }
 
     @Override
@@ -38,7 +38,11 @@ public class MicrochipsServiceImpl implements GenericService<Microchip> {
 
     @Override
     public Microchip getById(Long id) {
-        try { return microchipDAO.leer(id); } catch (SQLException e) { throw new RuntimeException(e); }
+        try {
+            return microchipDAO.leer(id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -48,4 +52,5 @@ public class MicrochipsServiceImpl implements GenericService<Microchip> {
         } catch (SQLException e) {
             throw new RuntimeException("Error al obtener todos los microchips", e);
         }
-    }}
+    }
+}
